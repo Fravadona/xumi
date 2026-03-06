@@ -2,7 +2,7 @@
 
 Extract subsequences from read alignments at specified genomic regions,
 with full CIGAR awareness.  
-Originally developed for inline UMI extraction, but applicable to any
+Originally developed for inline dual-UMI extraction, but applicable to any
 region-based sequence extraction from aligned reads.
 
 ## Overview
