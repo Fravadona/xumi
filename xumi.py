@@ -717,7 +717,7 @@ def run(cfg: Config) -> None:
         if cfg.output_path == '-':
             out = sys.stdout
         elif cfg.output_path.endswith('.gz'):
-            out = gzip.open(cfg.output_path, 'wt')
+            out = gzip.open(cfg.output_path, 'wt', compresslevel=6)
         else:
             out = open(cfg.output_path, 'w')
 
