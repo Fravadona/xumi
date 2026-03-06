@@ -55,8 +55,6 @@ class Region:
         Start coordinate (0-based).
     stop  : int
         End coordinate (exclusive).
-    name : Optional[str]
-        Region label, if any.
 
     Properties
     ----------
@@ -176,8 +174,8 @@ class MatchBlock:
     One contiguous aligned block from a single CIGAR op of type M/=/X.
 
     Coordinates are 0-based, half-open.
-    - Ref interval:  [ref_start, ref_stop)
-    - Query interval:[query_start, query_stop)
+    - Ref interval   : [ref_start, ref_stop)
+    - Query interval : [query_start, query_stop)
 
     cigar_op_index is the index into alignment.cigartuples for this M/=/X op.
     """
@@ -269,7 +267,7 @@ def block_slice_for_region(
     region: Region
 ) -> tuple[int, int] | None:
     """
-    Returns the smallest (i0, i1) interval such as proj.blocks[i0:i1]
+    Returns the smallest [i0, i1) interval such as proj.blocks[i0:i1]
     overlaps the region completely; i1 is exclusive.
     Returns None if no block overlaps.
     """
