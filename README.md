@@ -1,43 +1,32 @@
 # xumi
 
 Extract subsequences from read alignments at specified genomic regions,
-with full CIGAR awareness.  
-Originally developed for inline dual-UMI extraction, but applicable to any
-region-based sequence extraction from aligned reads.
+with full CIGAR awareness.
 
 ## Overview
 
+Originally developed for inline dual-UMI extraction, but applicable to any
+region-based sequence extraction from aligned reads.  
+
 **xumi** reads a SAM/BAM/CRAM file and, for each mapped read, extracts the
 subsequence(s) corresponding to one or more user-specified reference regions.
-It handles complex CIGAR strings correctly — insertions, deletions, soft clips, ...
-All standard alignment operations are taken into account.
 
-## Motivation
+### Motivation
 
-Existing tools solve adjacent problems but not this specific one:
+**xumi** fills a gap in the ecosystem, as existing tools solve adjacent problems:
 
-| Tool | What it does | Gap |
-|---|---|---|
-| `samtools view` | Extracts whole reads overlapping a region | Does not isolate the subsequence within the region |
-| `bedtools getfasta` | Extracts the reference sequence at a region | Returns the reference, not per-read sequences |
-| UMI-tools | Extracts UMIs from fixed read positions (first/last N bases) | Cannot handle UMIs at arbitrary genomic coordinates |
-| `samtools consensus` | Builds a consensus over a region | Collapses reads; no per-read output |
-
-**xumi** fills this gap: given a mapped read and a reference region, it returns
-the portion of *that read* corresponding to *that region*.
+| Tool | Limitation |
+|---|---|
+| `samtools view` | Returns whole reads, not the subsequence within a region |
+| `bedtools getfasta` | Returns the reference sequence, not per-read sequences |
+| UMI-tools | Only handles UMIs at fixed read positions (first/last N bases) |
+| `samtools consensus` | Collapses reads into a consensus; no per-read output |
 
 ### Key features
 
-- Full CIGAR awareness (M, =, X, I, D, N, S, H, P)
-- Multiple input regions per run
 - Control over insertions at the boundaries
-- Aligned-bases-only mode (no insertions)
 - TSV and FASTA output, in wide or long layout
 - Pipeable (both input and output) => easy integration with `samtools` and other tools
-
-> **Note:** supplementary and secondary alignments are processed like any
-> other mapped read. A read name may therefore appear multiple times in
-> the output.
 
 ## Installation
 
@@ -59,14 +48,14 @@ pip install --no-deps .
 ## Quick start
 
 ```bash
-# Single region, BAM input
-xumi -r chr1:100-200 mapped.bam
+# Single region
+xumi -r chr1:100-200 -O fasta mapped.bam > out.fasta
 
 # Multiple regions
-xumi -r chr1:100-200,chr1:1000-1100 mapped.bam
+xumi -r chr1:100-200,chr1:1000-1100 mapped.sam > out.tsv
 
 # Regions from a BED file
-xumi -R regions.bed mapped.bam
+xumi -R regions.bed -O tsv-long mapped.cram
 
 # Pipe from samtools
 samtools view -u mapped.bam chr1 | xumi -r chr1:100-200
@@ -80,6 +69,7 @@ xumi [-h] [-V] [-H] [-r REGIONS] [-R in.bed]
      [-O {tsv,tsv-long,fasta,fasta-long}]
      [-o FILE] [aln.sam|aln.bam|aln.cram]
 ```
+> **Note:** At least one of `-r` or `-R` is required.
 
 ### Options
 
@@ -94,8 +84,6 @@ xumi [-h] [-V] [-H] [-r REGIONS] [-R in.bed]
 | `-H`, `--no-header` | Suppress header line(s) |
 | `-V`, `--version` | Show version |
 
-At least one of `-r` or `-R` is required.
-
 ### Output formats
 
 | Format | Layout | Description |
@@ -105,7 +93,7 @@ At least one of `-r` or `-R` is required.
 | `fasta` | wide | One record per read, regions joined with `-` |
 | `fasta-long` | long | One record per read × region pair |
 
-Reads with no extracted sequence are omitted.
+> **Note:** Reads with no extracted sequence are omitted.
 
 ## Extraction modes
 
