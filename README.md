@@ -24,7 +24,7 @@ Existing tools solve adjacent problems but not this specific one:
 | `samtools consensus` | Builds a consensus over a region | Collapses reads; no per-read output |
 
 **xumi** fills this gap: given a mapped read and a reference region, it returns
-the portion of *that read* corresponding to *that region*
+the portion of *that read* corresponding to *that region*.
 
 ### Key features
 
@@ -41,25 +41,19 @@ the portion of *that read* corresponding to *that region*
 
 ## Installation
 
-### With pip (in a virtual environment)
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install .
-```
-
 ### With conda
 
 ```bash
-conda create -n xumi python=3.10
+git clone https://github.com/fravadona/xumi.git
+cd xumi
+conda create -n xumi -c conda-forge -c bioconda python=3.10 pysam
 conda activate xumi
-pip install .
+pip install --no-deps .
 ```
 
 ### Requirements
 
-- Python ≥ 3.10 (no feature newer than 3.7 but only tested with 3.10)
+- Python ≥ 3.10 (uses no features newer than 3.7, but only tested on 3.10)
 - [pysam](https://github.com/pysam-developers/pysam) ≥ 0.20
 
 ## Quick start
