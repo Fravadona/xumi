@@ -1,5 +1,9 @@
 # xumi
 
+![Python](https://img.shields.io/badge/python-3.10-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![GitHub](https://img.shields.io/github/v/release/fravadona/xumi)
+
 Extract subsequences from read alignments at specified genomic regions,
 with full CIGAR awareness.
 
@@ -42,23 +46,23 @@ pip install --no-deps .
 
 ### Requirements
 
-- Python ≥ 3.10 (uses no features newer than 3.7, but only tested on 3.10)
+- Python ≥ 3.10 (tested on 3.10, compatible with 3.7+)
 - [pysam](https://github.com/pysam-developers/pysam) ≥ 0.20
 
 ## Quick start
 
 ```bash
 # Single region
-xumi -r chr1:100-200 -O fasta mapped.bam > out.fasta
+xumi.py -r chr1:100-200 -O fasta mapped.bam > out.fasta
 
 # Multiple regions
-xumi -r chr1:100-200,chr1:1000-1100 mapped.sam > out.tsv
+xumi.py -r chr1:100-200,chr1:1000-1100 mapped.sam > out.tsv
 
 # Regions from a BED file
-xumi -R regions.bed -O tsv-long mapped.cram
+xumi.py -R regions.bed -O tsv-long mapped.cram
 
 # Pipe from samtools
-samtools view -u mapped.bam chr1 | xumi -r chr1:100-200
+samtools view -u mapped.bam chr1 | xumi.py -r chr1:100-200
 ```
 
 ## Usage
