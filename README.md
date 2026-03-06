@@ -1,14 +1,16 @@
 # xumi
 
 Extract subsequences from read alignments at specified genomic regions,
-with full CIGAR awareness. Originally developed for inline UMI extraction.
+with full CIGAR awareness.  
+Originally developed for inline UMI extraction, but applicable to any
+region-based sequence extraction from aligned reads.
 
 ## Overview
 
 **xumi** reads a SAM/BAM/CRAM file and, for each mapped read, extracts the
 subsequence(s) corresponding to one or more user-specified reference regions.
-It handles complex CIGAR strings correctly — insertions, deletions, soft clips,
-and all standard alignment operations are taken into account.
+It handles complex CIGAR strings correctly — insertions, deletions, soft clips, ...
+All standard alignment operations are taken into account.
 
 ## Motivation
 
@@ -21,18 +23,21 @@ Existing tools solve adjacent problems but not this specific one:
 | UMI-tools | Extracts UMIs from fixed read positions (first/last N bases) | Cannot handle UMIs at arbitrary genomic coordinates |
 | `samtools consensus` | Builds a consensus over a region | Collapses reads; no per-read output |
 
-**xumi** fills this gap: given a mapped read and a reference region, return
-the portion of *that read* corresponding to *that region*, with full
-CIGAR awareness.
+**xumi** fills this gap: given a mapped read and a reference region, it returns
+the portion of *that read* corresponding to *that region*
 
 ### Key features
 
 - Full CIGAR awareness (M, =, X, I, D, N, S, H, P)
 - Multiple input regions per run
-- Control over boundary insertion inclusion
+- Control over insertions at the boundaries
 - Aligned-bases-only mode (no insertions)
 - TSV and FASTA output, in wide or long layout
-- Reads from stdin, writes to stdout — pipeable with samtools
+- Pipeable (both input and output) => easy integration with `samtools` and other tools
+
+> **Note:** supplementary and secondary alignments are processed like any
+> other mapped read. A read name may therefore appear multiple times in
+> the output.
 
 ## Installation
 
@@ -54,8 +59,7 @@ pip install .
 
 ### Requirements
 
-- Python ≥ 3.10 (the code itself does not use features newer than 3.7,
-  but it has only been tested on 3.10)
+- Python ≥ 3.10 (no feature newer than 3.7 but only tested with 3.10)
 - [pysam](https://github.com/pysam-developers/pysam) ≥ 0.20
 
 ## Quick start
@@ -131,7 +135,7 @@ belong to either side. Use this option to control which region gets them:
 
 ```bash
 # Extract two adjacent regions without double-counting boundary insertions
-xumi -r chr1:10-19,chr1:20-29 regions.bed --boundary-insertions left mapped.bam
+xumi -r chr1:10-19,chr1:20-29 --boundary-insertions right mapped.bam
 ```
 
 | Value | Left boundary | Right boundary |
@@ -142,13 +146,6 @@ xumi -r chr1:10-19,chr1:20-29 regions.bed --boundary-insertions left mapped.bam
 | `none` | excluded | excluded |
 
 ## Examples
-
-### Extract UMIs from known positions
-
-```bash
-# UMI at chr1:1-8
-xumi -r chr1:1-8 -O tsv mapped.bam > umis.tsv
-```
 
 ### Multiple regions to TSV
 
@@ -161,6 +158,28 @@ Output:
 #qname	chr1:1-8	chr1:101-108
 read1	ACGTACGT	TGCATGCA
 read2	ACGTACG	TGCATGCAT
+```
+
+### Extract dual-UMIs from known positions with pre and post filtering
+
+```bash
+# UMIs are at chr1:101-120 and chr1:2001-2020 (expected sizes of around 20bp)
+
+# pre-filter reads with samtools (adjust filters to your needs)
+samtools view -u -h \
+    -F 'UNMAP,SECONDARY,QCFAIL,DUP,SUPPLEMENTARY' \
+    -e '1700 <= length(seq) && length(seq) <= 2300' \
+    -q 30 \
+    input.bam | # append 'chr1' to speed up if the BAM is sorted+indexed
+
+# extract the UMI regions, including boundary insertions
+xumi -H -r 'chr1:101-120,chr1:2001-2020' -b both -O tsv |
+
+# keep only records where both UMIs are within expected size range
+awk '
+    {umi1_len = length($2); umi2_len = length($3)}
+    17 <= umi1_len && umi1_len <= 23 && 17 <= umi2_len && umi2_len <= 23
+' FS='\t' > umis.tsv
 ```
 
 ### FASTA output for downstream tools
@@ -177,26 +196,13 @@ ACGTACGT
 ACGTACG
 ```
 
-## Supplementary and secondary alignments
-
-Supplementary and secondary alignments are processed like any other
-mapped read. A read name may therefore appear multiple times in the
-output when a read has multiple alignments.
-
-## Debugging
-
-Set the `XUMI_DEBUG` environment variable for full tracebacks on error:
-
-```bash
-XUMI_DEBUG=1 xumi -r chr1:100-200 mapped.bam
-```
-
 ## License
 
 [MIT](LICENSE)
 
 ## Author
 
-Rafael NAVAZA — Institut Pasteur, Plateforme de Cristallographie
-
+Rafael NAVAZA  
+Institut Pasteur, Plateforme de Cristallographie  
 rnavaza@pasteur.fr
+
