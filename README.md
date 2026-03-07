@@ -147,7 +147,7 @@ read1	ACGTACGT	TGCATGCA
 read2	ACGTACG	TGCATGCAT
 ```
 
-### Extract dual-UMIs from known positions with pre and post filtering
+### Extract dual-UMIs at known reference positions with pre and post filtering
 
 ```bash
 # UMIs are at chr1:101-120 and chr1:2001-2020 (expected sizes of around 20bp)
