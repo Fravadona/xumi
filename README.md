@@ -13,7 +13,8 @@ Originally developed for inline dual-UMI extraction, but applicable to any
 region-based sequence extraction from aligned reads.  
 
 **xumi** reads a SAM/BAM/CRAM file and, for each mapped read, extracts the
-subsequence(s) corresponding to one or more user-specified reference regions.
+subsequence(s) corresponding to one or more user-specified reference regions
+using the CIGAR information contained in the read record.
 
 ### Motivation
 
