@@ -3,6 +3,7 @@
 ![Python](https://img.shields.io/badge/python-3.10-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![GitHub](https://img.shields.io/github/release/fravadona/xumi)
+[![DOI](https://zenodo.org/badge/1172913507.svg)](https://doi.org/10.5281/zenodo.18905757)
 
 Extract subsequences from read alignments at specified genomic regions,
 with full CIGAR awareness.
