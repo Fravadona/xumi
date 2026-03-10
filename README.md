@@ -84,7 +84,7 @@ xumi [options] <aln.{sam|bam|cram}>
 | `fasta` | wide | One record per read, regions joined with `-` |
 | `fasta-long` | long | One record per read × region pair |
 
-> **Note:** Reads with no extracted sequence are omitted.
+> **Note:** Reads with no extracted sequence are omitted in output.
 
 #### Example outputs (with header):
 
@@ -140,8 +140,8 @@ Read:            GGGG TT CCC TT AAA TT - TT
 CIGAR:           SSSS II MMM II MMM II D II
 ```
 
-Suppose we extract the region `reference:1-7`, which corresponds to `AAAAAAC` in reference space. 
-Here's what you will get using different modes of **xumi**:
+Suppose we extract the region `rname:1-7`, which corresponds to `AAAAAAC` in reference space.
+Here's what **xumi** yields using different modes:
 
 | Mode | Extracted sequence |
 |---|---|
@@ -151,8 +151,8 @@ Here's what you will get using different modes of **xumi**:
 | None (`--boundary-insertions none`) | CCCTTAAATT |
 | Aligned-only (`--aligned-only`) | CCCAAA |
 
-> **Note:** Soft-clipped bases (S) are ignored, and deletions (D) act as anchors as long as
-> there is a query base overlapping the reference region.
+> **Note:** Soft-clipped bases (S) are ignored, and deletions (D) serve
+> as anchors as long as at least one base overlaps the reference region.
 
 ## Advanced example
 
