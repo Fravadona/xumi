@@ -26,16 +26,16 @@ def expected(filename):
 class TestSnapshotTSV:
 
     def test_aligned_only(self):
-        assert run_xumi("-O", "tsv", "-a") == expected("cigar_ops_aligned.tsv")
+        assert run_xumi("-O", "tsv", "-a") == expected(TEST_DATA / "cigar_ops_aligned.tsv")
 
     def test_slice_both(self):
-        assert run_xumi("-O", "tsv", "-b", "both") == expected("cigar_ops_slice_both.tsv")
+        assert run_xumi("-O", "tsv", "-b", "both") == expected(TEST_DATA / "cigar_ops_slice_both.tsv")
 
     def test_slice_none(self):
-        assert run_xumi("-O", "tsv", "-b", "none") == expected("cigar_ops_slice_none.tsv")
+        assert run_xumi("-O", "tsv", "-b", "none") == expected(TEST_DATA / "cigar_ops_slice_none.tsv")
 
     def test_slice_left(self):
-        assert run_xumi("-O", "tsv", "-b", "left") == expected("cigar_ops_slice_left.tsv")
+        assert run_xumi("-O", "tsv", "-b", "left") == expected(TEST_DATA / "cigar_ops_slice_left.tsv")
 
     def test_slice_right(self):
-        assert run_xumi("-O", "tsv", "-b", "right") == expected("cigar_ops_slice_right.tsv")
+        assert run_xumi("-O", "tsv", "-b", "right") == expected(TEST_DATA / "cigar_ops_slice_right.tsv")

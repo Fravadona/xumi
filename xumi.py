@@ -15,7 +15,7 @@ URL:         https://github.com/fravadona/xumi
 
 # ############################################################################ #
 
-__version__ = "1.0.0"
+__version__ = "1.0.2"
 
 # ############################################################################ #
 
@@ -240,6 +240,17 @@ def make_read_projection(aln: pysam.AlignedSegment) -> ReadProjection | None:
             qry_pos += op_len
 
         elif op in (COPS.CDEL, COPS.CREF_SKIP):
+            # create a zero-length query block to mark the deletion
+            blocks.append(MatchBlock(
+                cigar_op_index = op_idx,
+                ref_start = ref_pos,
+                ref_stop = ref_pos + op_len,
+                query_start = qry_pos,
+                query_stop = qry_pos
+            ))
+            block_ref_starts.append(ref_pos)
+            block_ref_stops.append(ref_pos + op_len)
+
             ref_pos += op_len
 
         else:
@@ -297,6 +308,9 @@ def extract_aligned_bases(proj: ReadProjection, region: Region) -> str | None:
     out: list[str] = []
     for i in range(i0, i1):
         b = blocks[i]
+        # skip deletion/skip block
+        if b.query_start == b.query_stop:
+            continue
         ov_ref_start = max(b.ref_start, region.start)
         ov_ref_stop  = min(b.ref_stop,  region.stop)
         if ov_ref_start < ov_ref_stop:
@@ -367,13 +381,18 @@ def query_slice_for_region(
 
     # ----- Inner anchors -----
     left_overlap_ref_start = max(first_block.ref_start, region.start)
-    qry_start_inner = first_block.query_start + (left_overlap_ref_start - first_block.ref_start)
+    right_overlap_ref_stop = min(last_block.ref_stop,   region.stop)
 
-    right_overlap_ref_stop = min(last_block.ref_stop, region.stop)
-    qry_stop_inner = last_block.query_start + (right_overlap_ref_stop - last_block.ref_start)  # exclusive
+    #qry_start_inner = first_block.query_start + (left_overlap_ref_start - first_block.ref_start)
+    qry_start_inner = qry_start_inner = max(first_block.query_start, first_block.query_start + (region.start - first_block.ref_start))
+    qry_stop_inner  = min(last_block.query_stop, last_block.query_start + (region.stop - last_block.ref_start)) # exclusive
 
     qry_start = qry_start_inner
     qry_stop  = qry_stop_inner
+
+    if qry_start == qry_stop:
+        # region covered entirely by deletions or skips
+        return None
 
     # ----- Boundary insertions -----
     if include_left_boundary_insertions:
@@ -390,7 +409,7 @@ def query_slice_for_region(
             qry_stop += right_insertion_length(proj.cigar_tuples, last_block.cigar_op_index)
 
     # invariant: slice bounds must be well-ordered and in range
-    assert (0 <= qry_start <= qry_start_inner < qry_stop_inner <= qry_stop <= len(proj.query_sequence))
+    #assert (0 <= qry_start <= qry_start_inner < qry_stop_inner <= qry_stop <= len(proj.query_sequence))
 
     return qry_start, qry_stop
 
@@ -776,6 +795,7 @@ def _extract_all(aln, regions_by_chrom, extract_mode):
 # ---------------------------------------------------------------------------- #
 
 XUMI_DEBUG = os.environ.get("XUMI_DEBUG", "0") not in ("0", "")
+XUMI_DEBUG = True
 
 def main() -> int:
     # restore SIGPIPE behavior of UNIX-tools
