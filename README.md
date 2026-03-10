@@ -141,7 +141,7 @@ CIGAR:           SSSS II MMM II MMM II D II
 ```
 
 Suppose we extract the region `rname:1-7`, which corresponds to `AAAAAAC` in reference space.
-Here's what **xumi** yields using different modes:
+Here's what **xumi** will yield using different modes:
 
 | Mode | Extracted sequence |
 |---|---|

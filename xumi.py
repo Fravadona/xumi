@@ -8,7 +8,7 @@ XUMI: Extract subsequences from read alignments at specified genomic regions,
       with full CIGAR awareness. Originally developed for inline UMI extraction.
 
 Author:      Rafael NAVAZA <rnavaza@pasteur.fr>
-Affiliation: Institut Pasteur, Plateforme de Cristallographie
+Affiliation: Institut Pasteur
 License:     MIT (see LICENSE file)
 URL:         https://github.com/fravadona/xumi
 """
@@ -384,13 +384,13 @@ def query_slice_for_region(
     right_overlap_ref_stop = min(last_block.ref_stop,   region.stop)
 
     #qry_start_inner = first_block.query_start + (left_overlap_ref_start - first_block.ref_start)
-    qry_start_inner = qry_start_inner = max(first_block.query_start, first_block.query_start + (region.start - first_block.ref_start))
+    qry_start_inner = max(first_block.query_start, first_block.query_start + (region.start - first_block.ref_start))
     qry_stop_inner  = min(last_block.query_stop, last_block.query_start + (region.stop - last_block.ref_start)) # exclusive
 
     qry_start = qry_start_inner
     qry_stop  = qry_stop_inner
 
-    if qry_start == qry_stop:
+    if qry_start >= qry_stop:
         # region covered entirely by deletions or skips
         return None
 
@@ -409,7 +409,16 @@ def query_slice_for_region(
             qry_stop += right_insertion_length(proj.cigar_tuples, last_block.cigar_op_index)
 
     # invariant: slice bounds must be well-ordered and in range
-    #assert (0 <= qry_start <= qry_start_inner < qry_stop_inner <= qry_stop <= len(proj.query_sequence))
+    if not (0 <= qry_start <= qry_start_inner < qry_stop_inner <= qry_stop <= len(proj.query_sequence)):
+        print(f"qry_start = {qry_start}",
+              f"qry_start_inner = {qry_start_inner}",
+              f"qry_stop_inner = {qry_stop_inner}",
+              f"qry_stop = {qry_stop}",
+              f"len(proj.query_sequence) = {len(proj.query_sequence)}",
+              sep = "\n",
+              file=sys.stderr,
+        )
+    assert (0 <= qry_start <= qry_start_inner < qry_stop_inner <= qry_stop <= len(proj.query_sequence))
 
     return qry_start, qry_stop
 
@@ -662,8 +671,6 @@ def parse_args(argv: list[str] | None = None) -> Config:
     )
     args = cli.parse_args()
 
-    # ------------------------------------------------------------------------ #
-
     # Validate option combinations
     if args.boundary_insertions and args.aligned_only:
         cli.error("--boundary-insertions conflicts with --aligned-only")
@@ -795,7 +802,6 @@ def _extract_all(aln, regions_by_chrom, extract_mode):
 # ---------------------------------------------------------------------------- #
 
 XUMI_DEBUG = os.environ.get("XUMI_DEBUG", "0") not in ("0", "")
-XUMI_DEBUG = True
 
 def main() -> int:
     # restore SIGPIPE behavior of UNIX-tools
