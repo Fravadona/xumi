@@ -145,24 +145,26 @@ TGCATGCAT
 Consider the following alignment:
 
 ```text
-Reference:            -- AAA -- AAA -- C --
+                         1             7
+Chr1:                 -- AAA -- AAA -- C --
                          |||    |||    |
 Read:            GGGG TT CCC TT AAA TT - TT
 CIGAR:           SSSS II MMM II MMM II D II
 ```
 
-Suppose we extract the region `rname:1-7`, which corresponds to `AAAAAAC` in reference space.
-Here's what **xumi** will yield using different modes:
+Suppose we extract the region `Chr1:1-7`, which corresponds to `AAAAAAC` in reference space.
+Here's what **xumi** yields using different modes:
 
 | Mode | Extracted sequence |
 |---|---|
-| Default (`--boundary-insertions both`) | TTCCCTTAAATTTT |
-| Left (`--boundary-insertions left`) | TTCCCTTAAATT |
-| Right (`--boundary-insertions right`) | CCCTTAAATTTT |
-| None (`--boundary-insertions none`) | CCCTTAAATT |
-| Aligned-only (`--aligned-only`) | CCCAAA |
+| Aligned-only: `--aligned-only`               | CCCAAA |
+| None: `--boundary-insertions none`           |   CCCTTAAATT |
+| Left: `--boundary-insertions left`           | TTCCCTTAAATT |
+| Right: `--boundary-insertions right`         |   CCCTTAAATTTT |
+| Both (default): `--boundary-insertions both` | TTCCCTTAAATTTT |
 
-> **Note:** Soft-clipped bases (`S`) at region boundaries are ignored, and deletions (`D`) serve as anchors only when they fall inside the region and the region also contains at least one mapped base.
+> **Note:** Soft-clipped bases (`S`) at region boundaries are ignored, and deletions (`D`) serve
+> as anchors only when they fall inside the region and the region also contains at least one mapped base.
 
 ## Advanced example
 
@@ -181,11 +183,11 @@ samtools view -u -h \
 # extract the UMI regions, including boundary insertions
 xumi -H -r 'chr1:101-120,chr1:2001-2020' -b both -O tsv |
 
-# post-filter reads where both UMIs are within expected size range (17-23 bp)
+# post-filter reads where both UMIs are within size range (17-23 bp)
 awk '
     {umi1_len = length($2); umi2_len = length($3)}
     17 <= umi1_len && umi1_len <= 23 && 17 <= umi2_len && umi2_len <= 23
-' FS='\t' > umis.tsv
+' FS='\t' > extracted_umis.tsv
 ```
 
 ## Feedback and Issues
