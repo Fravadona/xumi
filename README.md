@@ -65,7 +65,7 @@ xumi [options] <aln.{sam|bam|cram}>
 
 | Option | Description |
 |---|---|
-| `-r`, `--regions` | Comma-separated regions as `RNAME:START-END` (1-based) |
+| `-r`, `--regions` | Comma-separated regions: `chr1:100-200` (100 inclusive, 200 inclusive) |
 | `-R`, `--regions-file` | BED file containing regions |
 | `-a`, `--aligned-only` | Only output reference-aligned bases (M/=/X) |
 | `-b`, `--boundary-insertions` | Include boundary insertions: `both` (default), `left`, `right`, `none` |
@@ -151,8 +151,7 @@ Here's what **xumi** will yield using different modes:
 | None (`--boundary-insertions none`) | CCCTTAAATT |
 | Aligned-only (`--aligned-only`) | CCCAAA |
 
-> **Note:** Soft-clipped bases (S) are ignored, and deletions (D) serve
-> as anchors as long as at least one base overlaps the reference region.
+> **Note:** Soft-clipped bases (`S`) at region boundaries are ignored, and deletions (`D`) serve as anchors only when they fall inside the region and the region also contains at least one mapped base.
 
 ## Advanced example
 

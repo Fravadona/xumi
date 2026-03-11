@@ -15,7 +15,7 @@ URL:         https://github.com/fravadona/xumi
 
 # ############################################################################ #
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 # ############################################################################ #
 
@@ -257,7 +257,7 @@ def make_read_projection(aln: pysam.AlignedSegment) -> ReadProjection | None:
             # H, P, etc.
             pass
 
-    # invariant: CIGAR must consume entire query
+    # invariant: CIGAR-walking must consume entire query
     assert qry_pos == aln.query_length, (
         f"SEQ/CIGAR lengths mismatch: "
         f"{aln.query_name} -- {aln.query_length} ≠ {qry_pos}"
@@ -278,13 +278,16 @@ def block_slice_for_region(
     region: Region
 ) -> tuple[int, int] | None:
     """
-    Returns the smallest [i0, i1) interval such as proj.blocks[i0:i1]
-    overlaps the region completely; i1 is exclusive.
-    Returns None if no block overlaps.
+    Returns the smallest [i0, i1) interval such that proj.blocks[i0:i1]
+    overlaps the region completely. Returns None if no block overlaps.
+    Uses binary search for O(log n) performance on sorted block arrays.
     """
     starts = proj.block_ref_starts
     stops  = proj.block_ref_stops
 
+    # NOTE:
+    #   `bisect_right` finds first block ending after region start
+    #   `bisect_left`  finds first block starting at or after region end
     i0 = bisect_right(stops, region.start)   # first with stop > region.start
     i1 = bisect_left(starts, region.stop)    # first with start >= region.stop
 
@@ -308,8 +311,8 @@ def extract_aligned_bases(proj: ReadProjection, region: Region) -> str | None:
     out: list[str] = []
     for i in range(i0, i1):
         b = blocks[i]
-        # skip deletion/skip block
         if b.query_start == b.query_stop:
+            # skip deletion/skip block
             continue
         ov_ref_start = max(b.ref_start, region.start)
         ov_ref_stop  = min(b.ref_stop,  region.stop)
@@ -318,9 +321,8 @@ def extract_aligned_bases(proj: ReadProjection, region: Region) -> str | None:
             q1 = b.query_start + (ov_ref_stop  - b.ref_start)
             out.append(qs[q0:q1])
 
-    # If blocks overlap the region, each must produce at least one base
-    # (guaranteed by the bisect logic and the ov_ref_start < ov_ref_stop
-    # guard), so `out` is non-empty whenever `span` is not None.
+    # Overlapping blocks may all be deletions/ref-skips, producing no query
+    # bases, so `out` can be empty even when blocks overlap the region.
     return "".join(out) if out else None
 
 # ############################################################################ #
@@ -360,7 +362,7 @@ def query_slice_for_region(
 ) -> tuple[int, int] | None:
     """
     Return [q0, q1) for slicing proj.query_sequence[q0:q1]
-    in the QUERY_SLICE* extraction modes.
+    in the QUERY_SLICE types of extraction modes.
 
     Anchors are the first and last aligned bases (M/=/X)
     overlapping the region. Insertions between anchors are
@@ -383,41 +385,38 @@ def query_slice_for_region(
     left_overlap_ref_start = max(first_block.ref_start, region.start)
     right_overlap_ref_stop = min(last_block.ref_stop,   region.stop)
 
-    #qry_start_inner = first_block.query_start + (left_overlap_ref_start - first_block.ref_start)
-    qry_start_inner = max(first_block.query_start, first_block.query_start + (region.start - first_block.ref_start))
-    qry_stop_inner  = min(last_block.query_stop, last_block.query_start + (region.stop - last_block.ref_start)) # exclusive
+
+    if first_block.query_start == first_block.query_stop:  # D or N
+        qry_start_inner = first_block.query_start
+    else:
+        qry_start_inner = first_block.query_start + (left_overlap_ref_start - first_block.ref_start)
+
+    if last_block.query_start == last_block.query_stop:  # D or N
+        qry_stop_inner = last_block.query_stop
+    else:
+        qry_stop_inner = last_block.query_start + (right_overlap_ref_stop - last_block.ref_start)
 
     qry_start = qry_start_inner
     qry_stop  = qry_stop_inner
 
     if qry_start >= qry_stop:
-        # region covered entirely by deletions or skips
+        # region covered entirely by deletions or ref-skips
         return None
 
     # ----- Boundary insertions -----
+
     if include_left_boundary_insertions:
-        # Only include insertions to the left of a match block if the region's
-        # anchor is at the very beginning of that block. Otherwise, the
-        # insertion is not truly 'adjacent' to the region boundary.
-        if left_overlap_ref_start == first_block.ref_start:
+        # Include left-adjacent insertions only if region boundary aligns
+        # exactly with the start of the first overlapping block - this ensures
+        # we only include insertions that are truly adjacent to the region.
+        if region.start == first_block.ref_start:
             qry_start -= left_insertion_length(proj.cigar_tuples, first_block.cigar_op_index)
 
     if include_right_boundary_insertions:
-        # include right-adjacent insertions only if right anchor is at end of
-        # its match op
-        if right_overlap_ref_stop == last_block.ref_stop:
+        if region.stop == last_block.ref_stop:
             qry_stop += right_insertion_length(proj.cigar_tuples, last_block.cigar_op_index)
 
     # invariant: slice bounds must be well-ordered and in range
-    if not (0 <= qry_start <= qry_start_inner < qry_stop_inner <= qry_stop <= len(proj.query_sequence)):
-        print(f"qry_start = {qry_start}",
-              f"qry_start_inner = {qry_start_inner}",
-              f"qry_stop_inner = {qry_stop_inner}",
-              f"qry_stop = {qry_stop}",
-              f"len(proj.query_sequence) = {len(proj.query_sequence)}",
-              sep = "\n",
-              file=sys.stderr,
-        )
     assert (0 <= qry_start <= qry_start_inner < qry_stop_inner <= qry_stop <= len(proj.query_sequence))
 
     return qry_start, qry_stop
@@ -521,11 +520,11 @@ def emit_wide(out, fmt, qname, extractions, tgt_regions):
         seqs = [''] * len(tgt_regions)
         for rgn_idx, rgn, seq in extractions:
             seqs[rgn_idx] = seq
-        print(f">{qname}", file=out)
         # The best compromise between "standard" FASTA and a meaningful output
-        # is to join the sequences of the regions with a hyphen because they
-        # they can't appear in SAM sequences and the user will be able
-        # to retrieve them even when using a standard FASTA parser.
+        # is to join the sub-sequences of the regions with a hyphen because it
+        # can't appear in SAM sequences. That way the user will be able to
+        # retrieve them individually even when using a standard FASTA parser.
+        print(f">{qname}", file=out)
         print(fold_sequence('-'.join(seqs)), file=out)
 
 # ---------------------------------------------------------------------------- #
@@ -770,7 +769,10 @@ def run(cfg: Config) -> None:
 
 # ---------------------------------------------------------------------------- #
 
-def _emit_header(out, cfg: Config):
+def _emit_header(out:  TextIO, cfg: Config) -> None:
+    """
+    Emit header line(s) to output file based on format and layout.
+    """
     if cfg.out_fmt == OutputFormat.TSV:
         if cfg.out_layout == OutputLayout.WIDE:
             cols = ["qname"] + [str(r) for r in cfg.tgt_regions]
@@ -785,7 +787,14 @@ def _emit_header(out, cfg: Config):
 
 # ---------------------------------------------------------------------------- #
 
-def _extract_all(aln, regions_by_chrom, extract_mode):
+def _extract_all(
+    aln: pysam.AlignedSegment,
+    regions_by_chrom: dict[str, list[tuple[int, Region]]],
+    extract_mode: RegionExtractionMode
+) -> list[tuple[int, Region, str]]:
+    """
+    Extract sub-sequences for all matching regions in a single aligned read.
+    """
     extractions = []
     if not aln.is_unmapped:
         ref_name = aln.reference_name

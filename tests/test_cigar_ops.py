@@ -3,7 +3,7 @@
 import subprocess
 from pathlib import Path
 
-TEST_DATA = Path(__file__).parent / "test_data"
+TEST_DATA = Path(__file__).parent / "data"
 SAM_FILE  = str(TEST_DATA / "cigar_ops.sam")
 XUMI      = str(Path(__file__).parent.parent / "xumi.py")
 REGIONS   = "chr1:101-120,chr1:121-140"
