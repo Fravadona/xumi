@@ -51,7 +51,7 @@ pip install --no-deps .
 ## Quick start
 
 ```bash
-# Extract subsequence (default is TSV)
+# Extract subsequence in FASTA-format (default is TSV)
 xumi -r chr1:100-200 -O fasta mapped.bam
 ```
 
