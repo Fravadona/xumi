@@ -51,9 +51,20 @@ pip install --no-deps .
 ## Quick start
 
 ```bash
-# Extract a subsequence from reads overlapping a genomic region, FASTA-format output
+# Extract subsequence from reads overlapping a genomic region,
+# FASTA-format output (default is TSV)
 xumi -r chr1:100-200 -O fasta mapped.bam
 ```
+
+```text
+;regions: chr100:200
+>read1
+ATGCCGTTAAGCGGCGTACGTGCCCGATAGAGAGCTTACGACAGTGTACACGATGCCCGATCTAGTCAACCGGACTACGA
+ACGTACGTTGCATGCA
+>read2
+...
+```
+
 
 ## Usage
 
