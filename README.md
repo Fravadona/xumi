@@ -51,8 +51,7 @@ pip install --no-deps .
 ## Quick start
 
 ```bash
-# Extract subsequence from reads overlapping a genomic region,
-# FASTA-format output (default is TSV)
+# Extract subsequence (default is TSV)
 xumi -r chr1:100-200 -O fasta mapped.bam
 ```
 
@@ -78,11 +77,12 @@ xumi [options] <aln.{sam|bam|cram}>
 |---|---|
 | `-r`, `--regions` | Comma-separated regions: `chr1:100-200` (100 inclusive, 200 inclusive) |
 | `-R`, `--regions-file` | BED file containing regions |
-| `-a`, `--aligned-only` | Only output reference-aligned bases (M/=/X) |
+| `-a`, `--aligned-only` | Only output reference-aligned bases, *ignoring insertions within the region(s)* |
 | `-b`, `--boundary-insertions` | Include boundary insertions: `both` (default), `left`, `right`, `none` |
 | `-O`, `--output-format` | Output format (see below) |
 | `-o`, `--output` | Output file (default: stdout, `.gz` for gzipped) |
-| `-H`, `--no-header` | Suppress header line(s) |
+| `-H`, `--no-header` | Suppress header line |
+| `-h`, `--help` | Show help message |
 | `-V`, `--version` | Show version |
 > **Note:** At least one of `-r` or `-R` must be specified.
 
@@ -187,6 +187,17 @@ awk '
     17 <= umi1_len && umi1_len <= 23 && 17 <= umi2_len && umi2_len <= 23
 ' FS='\t' > umis.tsv
 ```
+
+## Feedback and Issues
+
+Your feedback, bug reports, and feature suggestions are highly welcome and help improve `xumi`.
+Please use the [GitHub Issues page](https://github.com/fravadona/xumi/issues) for all contributions.
+
+When reporting an issue, please include:
+*   A clear description of the problem or proposed feature.
+*   The `xumi` command(s) and input data (or minimal example) that caused the issue.
+*   The output of `xumi -V` and your `pysam` version.
+*   **For bugs:** Enable detailed logging with `XUMI_DEBUG=1 xumi ...` to provide a stack trace if an error occurs.
 
 ## License
 
