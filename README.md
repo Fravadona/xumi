@@ -1,6 +1,6 @@
 # xumi
 
-![Python](//img.shields.io/badge/Python-3.10%2B-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![GitHub](https://img.shields.io/github/release/fravadona/xumi)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18905757.svg)](https://doi.org/10.5281/zenodo.18905757)
