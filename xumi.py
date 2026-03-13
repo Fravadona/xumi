@@ -29,6 +29,7 @@ import argparse
 from pathlib import Path
 from enum import Enum, auto
 from dataclasses import dataclass
+from typing import IO, NamedTuple
 from collections import defaultdict
 from collections.abc import Iterator
 from bisect import bisect_left, bisect_right
@@ -146,6 +147,14 @@ def parse_region(region_str: str) -> Region:
         raise ValueError(f"invalid region boundaries: {repr(region_str)}")
 
     return Region(chrom=rname, start=start, stop=stop)
+
+# ---------------------------------------------------------------------------- #
+
+# FASTA spec conventionally wraps sequence lines at 80 characters.
+FASTA_LINE_WIDTH = 80
+
+def fold_sequence(seq: str, width: int = FASTA_LINE_WIDTH) -> str:
+    return "\n".join(seq[i:i+width] for i in range(0, len(seq), width))
 
 
 # ############################################################################ #
@@ -502,14 +511,28 @@ _OUTPUT_MODES = {
 
 # ---------------------------------------------------------------------------- #
 
-FASTA_LINE_WIDTH = 80
+class ExtractionResult(NamedTuple):
+    """
+    A single successful extraction result.
 
-def fold_sequence(seq: str, width: int = FASTA_LINE_WIDTH) -> str:
-    return "\n".join(seq[i:i+width] for i in range(0, len(seq), width))
+    region_index : index into the original tgt_regions list (used for
+                   column ordering in wide-format output).
+    region       : the target Region this sequence was extracted from.
+    sequence     : the extracted subsequence.
+    """
+    region_index: int
+    region: Region
+    sequence: str
 
 # ---------------------------------------------------------------------------- #
 
-def emit_wide(out, fmt, qname, extractions, tgt_regions):
+def emit_wide(
+    out: IO[str],
+    fmt: OutputFormat,
+    qname: str,
+    extractions: list[ExtractionResult],
+    tgt_regions: list[Region],
+) -> None:
     if fmt == OutputFormat.TSV:
         cols = [''] * len(tgt_regions)
         for rgn_idx, rgn, seq in extractions:
@@ -520,16 +543,20 @@ def emit_wide(out, fmt, qname, extractions, tgt_regions):
         seqs = [''] * len(tgt_regions)
         for rgn_idx, rgn, seq in extractions:
             seqs[rgn_idx] = seq
-        # The best compromise between "standard" FASTA and a meaningful output
-        # is to join the sub-sequences of the regions with a hyphen because it
-        # can't appear in SAM sequences. That way the user will be able to
-        # retrieve them individually even when using a standard FASTA parser.
+        # Regions are joined with '-', which can't appear in SAM sequences, so
+        # the user can recover individual regions by index (splitting on '-')
+        # even when using a standard FASTA parser.
         print(f">{qname}", file=out)
         print(fold_sequence('-'.join(seqs)), file=out)
 
 # ---------------------------------------------------------------------------- #
 
-def emit_long(out, fmt, qname, extractions):
+def emit_long(
+    out: IO[str],
+    fmt: OutputFormat,
+    qname: str,
+    extractions: list[ExtractionResult],
+) -> None:
     for rgn_idx, rgn, seq in extractions:
         if fmt == OutputFormat.TSV:
             print(f"{qname}\t{rgn}\t{seq}", file=out)
@@ -567,10 +594,10 @@ def parse_args(argv: list[str] | None = None) -> Config:
         ),
         epilog = (
             "examples:\n"
-            "  xumi.py -r chr1:100-200 mapped.bam\n"
+            "  xumi.py -r chr1:100-200,chr1:1000-1100 mapped.bam\n"
             "  xumi.py -R regions.bed --aligned-only mapped.bam\n"
             "  xumi.py -R regions.bed --boundary-insertions left mapped.bam\n"
-            "  samtools view -u mapped.bam chr1 | xumi.py -r chr1:100-200,chr1:1000-1100"
+            "  samtools view -u mapped.bam chr1 | xumi.py -r chr1:100-200"
         ),
         formatter_class = argparse.RawTextHelpFormatter,
     )
@@ -769,7 +796,7 @@ def run(cfg: Config) -> None:
 
 # ---------------------------------------------------------------------------- #
 
-def _emit_header(out:  TextIO, cfg: Config) -> None:
+def _emit_header(out: IO[str], cfg: Config) -> None:
     """
     Emit header line(s) to output file based on format and layout.
     """
@@ -791,11 +818,11 @@ def _extract_all(
     aln: pysam.AlignedSegment,
     regions_by_chrom: dict[str, list[tuple[int, Region]]],
     extract_mode: RegionExtractionMode
-) -> list[tuple[int, Region, str]]:
+) -> list[ExtractionResult]:
     """
     Extract sub-sequences for all matching regions in a single aligned read.
     """
-    extractions = []
+    extractions: list[ExtractionResult] = []
     if not aln.is_unmapped:
         ref_name = aln.reference_name
         if ref_name in regions_by_chrom:
@@ -804,7 +831,12 @@ def _extract_all(
                 for rgn_idx, rgn in regions_by_chrom[ref_name]:
                     seq = extract_region_from_projection(proj, rgn, extract_mode)
                     if seq is not None:
-                        extractions.append((rgn_idx, rgn, seq))
+                        result = ExtractionResult(
+                            region_index = rgn_idx,
+                            region       = rgn,
+                            sequence     = seq,
+                        )
+                        extractions.append(result)
     return extractions
 
 
