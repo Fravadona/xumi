@@ -110,7 +110,7 @@ read2    ACGTACG    TGCATGCAT
 **TSV (long)**
 
 ```text
-#qname   region        seq
+#qname   region        sequence
 read1    chr1:1-8      ACGTACGT
 read1    chr1:101-108  TGCATGCA
 read2    chr1:1-8      ACGTACG
