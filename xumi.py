@@ -291,6 +291,9 @@ def block_slice_for_region(
     overlaps the region completely. Returns None if no block overlaps.
     Uses binary search for O(log n) performance on sorted block arrays.
     """
+    # blocks and their ref_starts/stops are appended in CIGAR order,
+    # so block_ref_starts and block_ref_stops are guaranteed to be sorted,
+    # which is a prerequisite for the bisect calls in block_slice_for_region.
     starts = proj.block_ref_starts
     stops  = proj.block_ref_stops
 
