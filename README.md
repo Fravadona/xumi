@@ -5,12 +5,12 @@
 ![GitHub](https://img.shields.io/github/release/fravadona/xumi)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18905757.svg)](https://doi.org/10.5281/zenodo.18905757)
 
-Extract subsequences from aligned reads at specified genomic regions with full CIGAR awareness.
+CIGAR-aware extraction of per-read subsequences at specified reference regions from SAM/BAM/CRAM files.
 
 ## Overview
 
-**xumi** extracts subsequences from mapped reads at user-specified genomic regions, fully respecting CIGAR information.  
-Originally developed for inline dual-UMI extraction, it can be used for any region-based sequence extraction from aligned reads (SAM/BAM/CRAM).
+Originally developed for inline dual-UMI extraction,
+xumi generalizes to any region-based per-read subsequence extraction from aligned reads.
 
 ### Motivation
 
