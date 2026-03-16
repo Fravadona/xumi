@@ -184,7 +184,7 @@ samtools view -u -h \
 # extract the UMI regions, including boundary insertions
 xumi -H -r 'chr1:101-120,chr1:2001-2020' -b both -O tsv |
 
-# post-filter reads: only keep if both UMIs are within size range (17-23 bp)
+# post-filter sequences: only keep record if both UMIs are within size range (17-23 bp)
 awk '
     {umi1_len = length($2); umi2_len = length($3)}
     17 <= umi1_len && umi1_len <= 23 && 17 <= umi2_len && umi2_len <= 23
