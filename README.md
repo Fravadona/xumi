@@ -154,12 +154,12 @@ Suppose we extract the region `Chr1:1-7`, which corresponds to `AAAAAAC` in refe
 Here's what **xumi** yields using different modes:
 
 | Mode | Extracted sequence |
-|---|---|
-| Aligned-only: `--aligned-only`               | CCCAAA |
-| None: `--boundary-insertions none`           |   CCCTTAAATT |
-| Left: `--boundary-insertions left`           | TTCCCTTAAATT |
-| Right: `--boundary-insertions right`         |   CCCTTAAATTTT |
-| Both (default): `--boundary-insertions both` | TTCCCTTAAATTTT |
+|-|:-:|
+| Aligned-only: `--aligned-only`               | **`CCCAAA`** |
+| None: `--boundary-insertions none`           |   **`CCCTTAAATT`** |
+| Left: `--boundary-insertions left`           | **`TTCCCTTAAATT`** |
+| Right: `--boundary-insertions right`         |   **`CCCTTAAATTTT`** |
+| Both (default): `--boundary-insertions both` | **`TTCCCTTAAATTTT`** |
 
 > **Note:** Soft-clipped bases (`S`) at region boundaries are ignored, and deletions (`D`) serve
 > as anchors only when they fall inside the region and the region also contains at least one mapped base.
