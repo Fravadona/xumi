@@ -845,7 +845,7 @@ def _extract_all(
 
 # ---------------------------------------------------------------------------- #
 
-XUMI_DEBUG = os.environ.get("XUMI_DEBUG", "0") not in ("0", "")
+DEBUG = os.environ.get('XUMI_DEBUG', '').lower() in ('1', 'true', 'yes', 'on')
 
 def main() -> int:
     # restore SIGPIPE behavior of UNIX-tools
@@ -860,9 +860,16 @@ def main() -> int:
     except KeyboardInterrupt:
         return 130
 
+    except OSError as e:
+        print(f'error: {e.filename}: {e.strerror}', file=sys.stderr)
+        if DEBUG:
+            import traceback
+            traceback.print_exc()
+        return 1
+
     except Exception as e:
         print(f"error: {e}", file=sys.stderr)
-        if XUMI_DEBUG:
+        if DEBUG:
             import traceback
             traceback.print_exc()
         return 1
