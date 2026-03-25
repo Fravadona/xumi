@@ -22,7 +22,7 @@ Existing tools address related problems but leave a gap for per-read, region-spe
 | `bedtools getfasta` | Extracts reference sequences, not per-read sequences |
 | `UMI-tools` | Extracts UMIs from patterns before alignment |
 | `samtools consensus` | Collapses reads into a consensus, loses per-read information |
-| `cigarillo (R)` | R library only, not a commad-line utility |
+| `cigarillo (R)` | R library only, not a command-line utility |
 
 **xumi** fills this gap and offers the following capabilities:
 
@@ -42,11 +42,8 @@ Existing tools address related problems but leave a gap for per-read, region-spe
 ### With conda
 
 ```bash
-git clone https://github.com/fravadona/xumi.git
-cd xumi
-conda create -n xumi -c conda-forge -c bioconda python=3.10 pysam
+conda create -n xumi -c conda-forge -c bioconda xumi
 conda activate xumi
-pip install --no-deps .
 ```
 
 ## Quick start
